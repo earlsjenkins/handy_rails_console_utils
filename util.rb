@@ -6,7 +6,6 @@ def uload(reload_routes = false)
 end
 
 require 'active_record'
-
 # Easier-to-read ActiveRecord inspection
 class ActiveRecord::Base
   def self.fields
@@ -16,7 +15,7 @@ end
 
 class ActiveRecord::Base
   def self.[](id)
-    self.find_by_id(id)
+    self.send "find_by_#{self.primary_key}", id
   end
 end
 
@@ -25,8 +24,6 @@ class ActiveRecord::Base
     self.errors.full_messages
   end
 end
-
-
 
 # Load up the routes so you can call url_for-based magic methods
 require 'action_controller'
@@ -100,3 +97,30 @@ class Hash
   end
 end
 
+
+
+#########################################
+## STOLEN FROM gems.rake ################
+#########################################
+
+def print_gem_status(gem, indent=1)
+  code = case
+    when gem.framework_gem? then 'R'
+    when gem.frozen?        then 'F'
+    when gem.installed?     then 'I'
+    else                         ' '
+  end
+  puts "   "*(indent-1)+" - [#{code}] #{gem.name} #{gem.requirement.to_s}"
+  gem.dependencies.each { |g| print_gem_status(g, indent+1) }
+end
+
+# Same as gems:base task
+def print_all_gems
+  Rails.configuration.gems.each do |gem|
+    print_gem_status(gem)
+  end
+  puts
+  puts "I = Installed"
+  puts "F = Frozen"
+  puts "R = Framework (loaded before rails starts)"
+end
