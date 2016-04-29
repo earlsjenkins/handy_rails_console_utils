@@ -25,12 +25,24 @@ class ActiveRecord::Base
   end
 end
 
+class ActiveRecord::Base
+  def self.change_db(new_db_name)
+    conn_config = ActiveRecord::Base.connection_config
+    conn_config[:database] = new_db_name
+    ActiveRecord::Base.establish_connection conn_config
+  end
+end
+
 # Load up the routes so you can call url_for-based magic methods
 require 'action_controller'
 def rails_routes
   unless @rails_routes_loaded
     puts "Loading routes..."
-    include ActionController::UrlWriter
+    if Rails.version > "3.0.9"
+      include Rails.application.routes.url_helpers
+    else
+      include ActionController::UrlWriter
+    end
     default_url_options[:host] = 'localhost:3000'
     @rails_routes_loaded = true
   end
@@ -98,29 +110,34 @@ class Hash
 end
 
 
+# Only works in Rails 2
+if Rails.configuration.respond_to? :gems
 
-#########################################
-## STOLEN FROM gems.rake ################
-#########################################
-
-def print_gem_status(gem, indent=1)
-  code = case
-    when gem.framework_gem? then 'R'
-    when gem.frozen?        then 'F'
-    when gem.installed?     then 'I'
-    else                         ' '
+  #########################################
+  ## STOLEN FROM gems.rake ################
+  #########################################
+  
+  def print_gem_status(gem, indent=1)
+    code = case
+      when gem.framework_gem? then 'R'
+      when gem.frozen?        then 'F'
+      when gem.installed?     then 'I'
+      else                         ' '
+    end
+    puts "   "*(indent-1)+" - [#{code}] #{gem.name} #{gem.requirement.to_s}"
+    gem.dependencies.each { |g| print_gem_status(g, indent+1) }
   end
-  puts "   "*(indent-1)+" - [#{code}] #{gem.name} #{gem.requirement.to_s}"
-  gem.dependencies.each { |g| print_gem_status(g, indent+1) }
+  
+  # Same as gems:base task
+  def print_all_gems
+    Rails.configuration.gems.each do |gem|
+      print_gem_status(gem)
+    end
+    puts
+    puts "I = Installed"
+    puts "F = Frozen"
+    puts "R = Framework (loaded before rails starts)"
+  end
+
 end
 
-# Same as gems:base task
-def print_all_gems
-  Rails.configuration.gems.each do |gem|
-    print_gem_status(gem)
-  end
-  puts
-  puts "I = Installed"
-  puts "F = Frozen"
-  puts "R = Framework (loaded before rails starts)"
-end
