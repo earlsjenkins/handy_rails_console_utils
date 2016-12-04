@@ -31,7 +31,12 @@ class ActiveRecord::Base
     conn_config[:database] = new_db_name
     ActiveRecord::Base.establish_connection conn_config
   end
+
+  def self.db_name
+    ActiveRecord::Base.connection_config[:database]
+  end
 end
+
 
 # Load up the routes so you can call url_for-based magic methods
 require 'action_controller'
@@ -51,7 +56,11 @@ end
 rails_routes
 
 def reroute(force = false)
-  ActionController::Routing::Routes.send(force ? :reload! : :reload)
+  if Rails.version > "4.0"
+    Rails.application.reload_routes!
+  else
+    ActionController::Routing::Routes.send(force ? :reload! : :reload)
+  end
 end
 
 
@@ -106,6 +115,14 @@ class Hash
 
   def respond_to?(sym, include_private = false)
     super || self.has_key?(sym) || self.has_key?(sym.to_s)
+  end
+end
+
+# Reverse-find element in an Array
+class Array
+  def rfind(*args, &block)
+    i = rindex(*args, &block)
+    i && self[i]
   end
 end
 
