@@ -126,6 +126,22 @@ class Array
   end
 end
 
+# Memory usage
+def curr_mem
+  `ps -o rss= -p #{Process.pid}`.to_i
+end
+
+def mem_profile
+  mem_before = curr_mem
+  yield
+  mem_after = curr_mem
+  mem_diff = mem_after - mem_before
+  puts "Before: #{mem_before}"
+  puts "After: #{mem_after}"
+  puts "Difference: #{mem_diff}"
+  mem_diff
+end
+
 
 # Only works in Rails 2
 if Rails.configuration.respond_to? :gems
