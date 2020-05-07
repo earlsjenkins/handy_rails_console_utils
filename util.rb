@@ -70,9 +70,21 @@ def history
 end
 
 def hgrep(match)
-  matched = history.select {|h| begin Regexp.new(match).match(h) rescue nil end}
+  regex = Regexp.new(match)
+  matched = history.select {|h| regex.match?(h)}
   puts matched
   matched.size
+rescue
+  puts $!
+  0
+end
+
+def hindex(match)
+  regex = Regexp.new(match)
+  history.index{|h| regex.match?(h)}
+rescue
+  puts $!
+  nil
 end
 
 
